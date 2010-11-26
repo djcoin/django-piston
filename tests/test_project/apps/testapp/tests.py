@@ -1,9 +1,10 @@
 from django.test import TestCase
+from django.http import HttpRequest
 from django.contrib.auth.models import User
 from django.utils import simplejson
 from django.conf import settings
 
-from piston import oauth
+from piston import oauth, utils
 from piston.models import Consumer, Token
 from piston.forms import OAuthAuthenticationForm
 
@@ -33,6 +34,20 @@ class MainTests(TestCase):
     def tearDown(self):
         self.user.delete()
 
+
+
+class MimerTests(TestCase):
+    def setUp(self):
+        self.request = HttpRequest()
+        self.mimer = utils.Mimer(self.request)
+
+    def test_content_type_without_encoding(self):
+        self.request.META['CONTENT_TYPE'] = 'application/json'
+        self.assertEqual('application/json', mimer.content_type())
+
+    def test_content_type_with_encoding(self):
+        self.request.META['CONTENT_TYPE'] = 'application/json; charset=UTF-8'
+        self.assertEqual('application/json', mimer.content_type())
 
 
 class OAuthTests(MainTests):

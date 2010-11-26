@@ -13,7 +13,7 @@ from emitters import Emitter
 from handler import typemapper
 from doc import HandlerMethod
 from authentication import NoAuthentication
-from utils import coerce_put_post, FormValidationError, HttpStatusCode
+from utils import coerce_method_post, FormValidationError, HttpStatusCode
 from utils import rc, format_error, translate_mime, MimerDataException
 
 CHALLENGE = object()
@@ -121,8 +121,7 @@ class Resource(object):
 
         # Django's internal mechanism doesn't pick up
         # PUT request, so we trick it a little here.
-        if rm == "PUT":
-            coerce_put_post(request)
+        coerce_method_post(request)
 
         actor, anonymous = self.authenticate(request, rm)
 
@@ -132,16 +131,13 @@ class Resource(object):
             handler = actor
 
         # Translate nested datastructs into `request.data` here.
-        if rm in ('POST', 'PUT'):
+        if rm in ('POST', 'PUT', 'DELETE'):
             try:
                 translate_mime(request)
             except MimerDataException:
                 return rc.BAD_REQUEST
             if not hasattr(request, 'data'):
-                if rm == 'POST':
-                    request.data = request.POST
-                else:
-                    request.data = request.PUT
+                request.data = getattr(request, rm)
 
         if not rm in handler.allowed_methods:
             return HttpResponseNotAllowed(handler.allowed_methods)

@@ -151,7 +151,7 @@ def throttle(max_requests, timeout=60*60, extra=''):
         return f(self, request, *args, **kwargs)
     return wrap
 
-def coerce_put_post(request):
+def coerce_method_post(request):
     """
     Django doesn't particularly understand REST.
     In case we send data over PUT, Django won't
@@ -161,7 +161,7 @@ def coerce_put_post(request):
     The try/except abominiation here is due to a bug
     in mod_python. This should fix it.
     """
-    if request.method == "PUT":
+    if request.method in ('PUT', 'DELETE',) :
         # Bug fix: if _load_post_and_files has already been called, for
         # example by middleware accessing request.POST, the below code to
         # pretend the request is a POST instead of a PUT will be too late
@@ -172,6 +172,7 @@ def coerce_put_post(request):
         # the first time _load_post_and_files is called (both by wsgi.py and 
         # modpython.py). If it's set, the request has to be 'reset' to redo
         # the query value parsing in POST mode.
+        method = request.method
         if hasattr(request, '_post'):
             del request._post
             del request._files
@@ -179,13 +180,13 @@ def coerce_put_post(request):
         try:
             request.method = "POST"
             request._load_post_and_files()
-            request.method = "PUT"
+            request.method = method
         except AttributeError:
             request.META['REQUEST_METHOD'] = 'POST'
             request._load_post_and_files()
-            request.META['REQUEST_METHOD'] = 'PUT'
+            request.META['REQUEST_METHOD'] = method
             
-        request.PUT = request.POST
+        setattr(request, method, request.POST)
 
 
 class MimerDataException(Exception):

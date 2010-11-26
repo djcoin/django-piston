@@ -1,0 +1,7 @@
+*.pyc
+.*.swp
+django_piston.egg-info/
+bin/
+eggs/
+develop-eggs/
+parts/
